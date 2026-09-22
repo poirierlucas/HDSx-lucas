@@ -1,6 +1,6 @@
 ---
 title: "My First Report"
-author: "Your Name"
+author: "Lucas Poirier"
 format:
   html:
     embed-resources: true
@@ -42,3 +42,11 @@ hist(patients$age,
 
 When you are happy with the result, **commit and sync** your work (the Week 2
 course page walks you through this), then submit your repository link on Canvas.
+
+## My notes
+
+- I learned more about git today
+
+```{r}
+summary(patients)
+```
