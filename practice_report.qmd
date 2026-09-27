@@ -38,6 +38,7 @@ hist(patients$age,
 ## Your turn
 
 - Add a sentence here describing what you notice in the chart.
+- I notice that there is a fairly gaussian looking distribution of practice patients
 - Render again and check that both your sentence and the chart appear.
 
 When you are happy with the result, **commit and sync** your work (the Week 2
@@ -46,7 +47,11 @@ course page walks you through this), then submit your repository link on Canvas.
 ## My notes
 
 - I learned more about git today
+- I learned to download an extension that allows me to live preview any view-able files, such as html files
+- I practiced Markdown and R, such as using *italics* and **bold** text edits.
 
 ```{r}
 summary(patients)
 ```
+
+The average patient age is `r round(mean(patients$age), 1)` years.

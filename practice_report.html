@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="Your Name">
+<meta name="author" content="Lucas Poirier">
 
 <title>My First Report</title>
 <style>
@@ -2203,10 +2203,11 @@ vertical-align: -.125em;
 
 </head>
 
-<body class="fullcontent quarto-light">
+<body class="quarto-light">
 
 <div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
-
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="practice_report.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></div>
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
@@ -2221,7 +2222,7 @@ vertical-align: -.125em;
     <div>
     <div class="quarto-title-meta-heading">Author</div>
     <div class="quarto-title-meta-contents">
-             <p>Your Name </p>
+             <p>Lucas Poirier </p>
           </div>
   </div>
     
@@ -2276,9 +2277,38 @@ vertical-align: -.125em;
 <h2 class="anchored" data-anchor-id="your-turn">Your turn</h2>
 <ul>
 <li>Add a sentence here describing what you notice in the chart.</li>
+<li>I notice that there is a fairly gaussian looking distribution of practice patients</li>
 <li>Render again and check that both your sentence and the chart appear.</li>
 </ul>
 <p>When you are happy with the result, <strong>commit and sync</strong> your work (the Week 2 course page walks you through this), then submit your repository link on Canvas.</p>
+</section>
+<section id="my-notes" class="level2">
+<h2 class="anchored" data-anchor-id="my-notes">My notes</h2>
+<ul>
+<li>I learned more about git today</li>
+<li>I learned to download an extension that allows me to live preview any view-able files, such as html files</li>
+<li>I practiced Markdown and R, such as using <em>italics</em> and <strong>bold</strong> text edits.</li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(patients)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       id             age               sex           region    systolic_bp   
+ Min.   : 1.00   Min.   :35.00   Length   :12   Length   :12   Min.   :108.0  
+ 1st Qu.: 3.75   1st Qu.:46.00   N.unique : 2   N.unique : 4   1st Qu.:122.0  
+ Median : 6.50   Median :55.50   N.blank  : 0   N.blank  : 0   Median :132.0  
+ Mean   : 6.50   Mean   :54.08   Min.nchar: 1   Min.nchar: 4   Mean   :131.3  
+ 3rd Qu.: 9.25   3rd Qu.:62.00   Max.nchar: 1   Max.nchar: 5   3rd Qu.:142.0  
+ Max.   :12.00   Max.   :72.00                                 Max.   :150.0  
+      diabetes 
+ Length   :12  
+ N.unique : 2  
+ N.blank  : 0  
+ Min.nchar: 2  
+ Max.nchar: 3  
+               </code></pre>
+</div>
+</div>
+<p>The average patient age is 54.1 years.</p>
 </section>
 
 </main>
