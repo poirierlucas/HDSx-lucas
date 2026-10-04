@@ -32,11 +32,15 @@ Replace this example with your own summary if you choose a different question.
 
 ```{r}
 bmi_summary <- nhanes |>
-  filter(!is.na(BMI), !is.na(IncomeGroup)) |>
+  filter(Age >= 20, !is.na(BMI), !is.na(IncomeGroup)) |>
+  select(IncomeGroup, Age, BMI) |>
+  mutate(obese = BMI >= 30) |>
   group_by(IncomeGroup) |>
   summarise(
     n = n(),
     mean_bmi = mean(BMI),
+    sd_bmi = sd(BMI),
+    pct_obese = round(100 * mean(obese), 1),
     .groups = "drop"
   )
 
@@ -46,14 +50,19 @@ bmi_summary
 ## Function
 
 ```{r}
-mean_with_n <- function(x) {
+mean_sd <- function(x) {
   tibble(
-    n = sum(!is.na(x)),
-    mean = mean(x, na.rm = TRUE)
+    n    = sum(!is.na(x)),
+    mean = mean(x, na.rm = TRUE),
+    sd   = sd(x, na.rm = TRUE)
   )
 }
 
-mean_with_n(nhanes$BMI)
+mean_sd(nhanes$BMI)
+
+mean(nhanes$BMI, na.rm = TRUE)
+sd(nhanes$BMI, na.rm = TRUE)
+
 ```
 
 ## Save Output
@@ -65,4 +74,4 @@ write_csv(bmi_summary, "assignments/assignment02-r-with-ai/submission/output/sum
 
 ## AI Audit Note
 
-Add comments explaining which parts were drafted or debugged with AI and how you verified the result.
+I got Claude Code to help me write the two new functions I made.
