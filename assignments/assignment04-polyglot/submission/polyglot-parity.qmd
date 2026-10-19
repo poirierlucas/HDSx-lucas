@@ -1,0 +1,79 @@
+---
+title: "BMI Summary Parity: R and Python"
+format: html
+---
+
+## Question and data
+
+This analysis compares descriptive BMI statistics across income group and
+gender. The CSV path is relative to the repository root, which is the Quarto
+project execution directory.
+
+```{r}
+#| message: false
+#| warning: false
+library(readr)
+library(dplyr)
+
+nhanes <- read_csv(
+  "examples/nhanes-equity/data/nhanes_equity_v6.csv",
+  col_types = cols(
+    Marital = col_character(),
+    MaritalClean = col_character()
+  ),
+  show_col_types = FALSE
+)
+```
+
+## Reusable summary
+
+Rows without BMI, income group, or gender are excluded so both implementations
+summarize the same complete cases. The function returns the group count, mean,
+median, and sample standard deviation of BMI.
+
+```{r}
+summarize_bmi <- function(data) {
+  data |>
+    filter(!is.na(BMI), !is.na(IncomeGroup), !is.na(Gender)) |>
+    group_by(IncomeGroup, Gender) |>
+    summarise(
+      n = n(),
+      mean_bmi = mean(BMI),
+      median_bmi = median(BMI),
+      sd_bmi = sd(BMI),
+      .groups = "drop"
+    ) |>
+    arrange(IncomeGroup, Gender)
+}
+
+bmi_summary <- summarize_bmi(nhanes)
+bmi_summary |>
+  mutate(
+    mean_bmi = round(mean_bmi, 2),
+    median_bmi = round(median_bmi, 2),
+    sd_bmi = round(sd_bmi, 2)
+  ) |>
+  knitr::kable()
+```
+
+## R and Python parity
+
+The table records the raw and complete-case row counts, number and labels of
+groups, and the rounded summaries from both implementations. `TRUE` indicates
+the values agree.
+
+```{r}
+parity <- read_csv(
+  "assignments/assignment04-polyglot/submission/parity-table.csv",
+  show_col_types = FALSE
+)
+knitr::kable(parity)
+```
+
+## Reproduction
+
+The corresponding pandas implementation is in
+`assignments/assignment04-polyglot/submission/translation.ipynb`; its reusable
+summary function is in `assignments/assignment04-polyglot/submission/helpers.py`.
+See `assignments/assignment04-polyglot/submission/DEPENDENCIES.md` for package
+requirements.

@@ -1,0 +1,12 @@
+metric,label,r_value,python_value,match,notes
+raw_row_count,all rows,105626,105626,TRUE,Rows in source CSV
+raw_column_count,all columns,18,18,TRUE,Columns in source CSV
+filtered_row_count,complete BMI and grouping fields,87647,87647,TRUE,Rows retained after dropping missing BMI IncomeGroup or Gender
+number_of_groups,IncomeGroup by Gender,6,6,TRUE,Distinct summary groups
+grouping_labels,IncomeGroup / Gender,"High Income (>3.5) / Female; High Income (>3.5) / Male; Low Income (<1.3) / Female; Low Income (<1.3) / Male; Middle Income / Female; Middle Income / Male","High Income (>3.5) / Female; High Income (>3.5) / Male; Low Income (<1.3) / Female; Low Income (<1.3) / Male; Middle Income / Female; Middle Income / Male",TRUE,Sorted labels in both implementations
+rounded_summary_values,High Income (>3.5) / Female,"n=11743; mean=25.74; median=24.60; sd=7.51","n=11743; mean=25.74; median=24.60; sd=7.51",TRUE,Mean median and sample SD rounded to 2 decimals
+rounded_summary_values,High Income (>3.5) / Male,"n=12095; mean=26.11; median=26.00; sd=6.81","n=12095; mean=26.11; median=26.00; sd=6.81",TRUE,Mean median and sample SD rounded to 2 decimals
+rounded_summary_values,Low Income (<1.3) / Female,"n=16548; mean=25.95; median=24.66; sd=8.65","n=16548; mean=25.95; median=24.66; sd=8.65",TRUE,Mean median and sample SD rounded to 2 decimals
+rounded_summary_values,Low Income (<1.3) / Male,"n=14847; mean=24.05; median=23.30; sd=7.17","n=14847; mean=24.05; median=23.30; sd=7.17",TRUE,Mean median and sample SD rounded to 2 decimals
+rounded_summary_values,Middle Income / Female,"n=16432; mean=26.39; median=25.30; sd=8.20","n=16432; mean=26.39; median=25.30; sd=8.20",TRUE,Mean median and sample SD rounded to 2 decimals
+rounded_summary_values,Middle Income / Male,"n=15982; mean=25.52; median=25.10; sd=7.22","n=15982; mean=25.52; median=25.10; sd=7.22",TRUE,Mean median and sample SD rounded to 2 decimals
