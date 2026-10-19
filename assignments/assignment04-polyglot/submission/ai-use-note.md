@@ -1,0 +1,1 @@
+Github Copilot was used to aid in writing code and file management
