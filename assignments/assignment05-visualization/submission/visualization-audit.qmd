@@ -1,0 +1,255 @@
+---
+title: "Visualization Audit: Adult BMI by Income Group Across NHANES Cycles"
+format: html
+---
+
+## Question and data
+
+**Descriptive question:** How did the unweighted mean BMI of adults (age 20+)
+in the NHANES classroom snapshot differ across income groups, cycle by cycle,
+from 1999-2000 to 2021-2023?
+
+This is a descriptive comparison. It does not say *why* the groups differ and
+does not estimate national (population) values, because the survey weights,
+strata, and PSUs are not used.
+
+The CSV path is relative to the repository root, which is the Quarto project
+execution directory (`execute-dir: project` in `_quarto.yml`).
+
+```{r}
+#| message: false
+#| warning: false
+library(readr)
+library(dplyr)
+library(ggplot2)
+
+nhanes <- read_csv(
+  "examples/nhanes-equity/data/nhanes_equity_v6.csv",
+  col_types = cols(
+    Marital = col_character(),
+    MaritalClean = col_character()
+  ),
+  show_col_types = FALSE
+)
+
+cycle_levels <- sort(unique(nhanes$Cycle))
+cycle_levels
+```
+
+## Step 1: Reproduce the flawed starter plot
+
+This chunk reproduces the summary and plot from `flawed-plot-code.R` without
+its hard-coded Desktop path, so the audit can compare against it directly.
+
+```{r}
+#| label: flawed-plot
+#| warning: false
+endpoint_cycles <- c(cycle_levels[1], cycle_levels[length(cycle_levels)])
+
+flawed_summary <- nhanes |>
+  filter(!is.na(BMI), !is.na(IncomeGroup), Cycle %in% endpoint_cycles) |>
+  group_by(Cycle, IncomeGroup) |>
+  summarise(
+    n = n(),
+    min_age = min(Age),
+    mean_bmi = mean(BMI),
+    .groups = "drop"
+  )
+
+flawed_summary
+
+ggplot(
+  flawed_summary,
+  aes(x = Cycle, y = mean_bmi, color = IncomeGroup, group = IncomeGroup)
+) +
+  geom_point(size = 3) +
+  geom_line(linetype = "dashed", linewidth = 1) +
+  scale_y_continuous(limits = c(24, 28)) +
+  labs(
+    title = "Low income drives rising obesity in American adults",
+    subtitle = "Adults age 20-80: BMI climbed steadily across every NHANES cycle",
+    x = "NHANES cycle",
+    y = "BMI",
+    color = "Income"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+What the summary table shows about the flawed plot:
+
+- `min_age` is 2 in every group: the "Adults age 20-80" subtitle is false
+  because no age filter was applied. Children have lower BMI and are
+  over-represented in the low-income group, which is why low income has the
+  *lowest* mean here, which contradicts the plot's own title.
+- Only two of the `r length(cycle_levels)` cycles are used, so "climbed
+  steadily across every NHANES cycle" can't be checked from this plot. The
+  dashed line implies a path the data never show.
+- The y-axis is cut to 24-28 BMI units, which makes a gap of about 1 unit
+  look large, and the plot shows no counts, uncertainty, or survey-design caveat.
+
+## Step 2: First draft
+
+My first draft fixed the age filter and used every cycle, but kept the
+default settings: alphabetical legend order (High, Low, Middle), raw
+`IncomeGroup` labels, no uncertainty, and an automatic y-axis.
+
+```{r}
+#| label: draft-plot
+adult_bmi <- nhanes |>
+  filter(Age >= 20, !is.na(BMI), !is.na(IncomeGroup))
+
+draft_summary <- adult_bmi |>
+  group_by(Cycle, IncomeGroup) |>
+  summarise(mean_bmi = mean(BMI), .groups = "drop")
+
+ggplot(draft_summary, aes(Cycle, mean_bmi, color = IncomeGroup, group = IncomeGroup)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Mean BMI by income group", y = "BMI")
+```
+
+Draft problems I found:
+
+- The automatic y-axis covers only about 3 BMI units with no note, so small
+  differences still look dramatic.
+- Legend order (High, Low, Middle) doesn't follow the income ordering, and
+  "Middle Income" has no PIR cut-points in its label.
+- Cycle labels overlap, and nothing shows the missing 2019-2020 cycle
+  (a 2017-2018 to 2021-2023 jump is drawn as if it were one regular step).
+- No group sizes or interval, so a reader can't tell how stable each mean is.
+
+## Step 3: Revised plot
+
+Revisions:
+
+1. **Population:** adults age 20+ only, matching the label. Rows with missing
+   BMI or income group are excluded and the counts are reported.
+2. **All cycles, honest spacing:** all 11 cycles are shown. The line is broken
+   between 2017-2018 and 2021-2023 so it doesn't hide the missing 2019-2020
+   cycle (NHANES fieldwork was cut short by COVID-19).
+3. **Uncertainty:** each point carries a simple 95% interval (mean ± 1.96 SE).
+   This is *unweighted* and ignores the survey design, so it describes the
+   classroom sample only.
+4. **Scale:** the y-axis is fixed at 25-32 BMI units, wider than the data, and
+   the caption says so. A zero baseline would flatten the chart because BMI
+   never comes near 0. The axis choice is stated instead of hidden.
+5. **Labels and order:** income groups are ordered Low → Middle → High and
+   labelled with PIR cut-points. The title says what is shown, not a cause.
+
+```{r}
+#| label: corrected-plot
+#| fig-width: 9
+#| fig-height: 5.5
+#| fig-alt: "Line chart of unweighted mean adult BMI by income group across 11 NHANES cycles, 1999-2000 to 2021-2023, with 95% intervals. All three income groups rise from about 28 to about 29-30. Low- and middle-income adults have slightly higher means than high-income adults in most cycles."
+income_labels <- c(
+  "Low Income (<1.3)" = "Low (PIR < 1.3)",
+  "Middle Income" = "Middle (PIR 1.3-3.5)",
+  "High Income (>3.5)" = "High (PIR > 3.5)"
+)
+
+bmi_summary <- adult_bmi |>
+  mutate(
+    income = factor(income_labels[IncomeGroup], levels = income_labels),
+    Cycle = factor(Cycle, levels = cycle_levels),
+    # 2021-2023 follows the missing 2019-2020 cycle; break the line there
+    segment = if_else(Cycle == "2021-2023", "after_gap", "before_gap")
+  ) |>
+  group_by(Cycle, segment, income) |>
+  summarise(
+    n = n(),
+    mean_bmi = mean(BMI),
+    se = sd(BMI) / sqrt(n),
+    .groups = "drop"
+  ) |>
+  mutate(lower = mean_bmi - 1.96 * se, upper = mean_bmi + 1.96 * se)
+
+n_adults <- nrow(adult_bmi)
+n_excluded <- nhanes |>
+  filter(Age >= 20, is.na(BMI) | is.na(IncomeGroup)) |>
+  nrow()
+
+income_colors <- c(
+  "Low (PIR < 1.3)" = "#D55E00",
+  "Middle (PIR 1.3-3.5)" = "#7F7F7F",
+  "High (PIR > 3.5)" = "#0072B2"
+)
+
+corrected_plot <- ggplot(
+  bmi_summary,
+  aes(x = Cycle, y = mean_bmi, color = income)
+) +
+  geom_line(aes(group = interaction(income, segment)), linewidth = 0.8) +
+  geom_pointrange(aes(ymin = lower, ymax = upper), size = 0.35) +
+  annotate(
+    "text", x = 10.5, y = 31.6, label = "2019-2020\nnot collected",
+    size = 3, color = "grey40", lineheight = 0.9
+  ) +
+  scale_color_manual(values = income_colors) +
+  scale_y_continuous(limits = c(25, 32), breaks = 25:32) +
+  labs(
+    title = "Mean BMI among adults rose in all three income groups, 1999-2023",
+    subtitle = paste0(
+      "Unweighted NHANES classroom sample, adults 20+ (n = ",
+      format(n_adults, big.mark = ","),
+      ").\nPoints: mean BMI with unweighted 95% interval. Y-axis starts at 25, not 0."
+    ),
+    x = "NHANES cycle",
+    y = "Mean BMI (kg/m²)",
+    color = "Family income (poverty-income ratio):",
+    caption = paste(
+      "Source: CDC/NCHS NHANES public-use data (nhanes_equity_v6 classroom snapshot).",
+      "\nDescriptive and unweighted; not national estimates or causal effects.",
+      sep = ""
+    )
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 35, hjust = 1),
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom",
+    plot.caption = element_text(hjust = 0, color = "grey35")
+  )
+
+corrected_plot
+
+ggsave(
+  "assignments/assignment05-visualization/submission/corrected-plot.png",
+  corrected_plot,
+  width = 9, height = 5.5, dpi = 300, bg = "white"
+)
+```
+
+Group sizes and summary values behind the plot:
+
+```{r}
+#| label: summary-table
+bmi_summary |>
+  select(Cycle, income, n, mean_bmi, lower, upper) |>
+  mutate(across(c(mean_bmi, lower, upper), \(x) round(x, 1))) |>
+  knitr::kable(col.names = c("Cycle", "Income", "n", "Mean BMI", "95% lower", "95% upper"))
+```
+
+`r format(n_excluded, big.mark = ",")` adults (age 20+) were excluded for
+missing BMI or income group. Missing income is not random (for example, it
+may be more common among people who decline to report income), so the
+remaining groups may not represent everyone in each cycle.
+
+## Interpretation
+
+In this unweighted classroom sample, mean adult BMI was higher in 2021-2023
+than in 1999-2000 in every income group, at about 29-30 compared with about
+28. From about 2005-2006 on, low- and middle-income adults usually had a
+slightly higher mean BMI than high-income adults, by roughly 0.5-1.3 BMI
+units. The low- and middle-income groups are hard to tell apart. These are
+descriptive differences in sample means. They do not show that income causes
+BMI, and they are not survey-weighted estimates for the U.S. population.
+
+## Reproducing this file
+
+From the repository root:
+
+```bash
+quarto render assignments/assignment05-visualization/submission/visualization-audit.qmd
+```
+
+Rendering re-creates `corrected-plot.png` in this folder through `ggsave()`.
