@@ -1,0 +1,151 @@
+---
+title: "EDA Note: Adult BMI and Age by Income Group in the NHANES Classroom Snapshot"
+format: html
+---
+
+## Question and data
+
+**Descriptive question:** Among adults age 20-80 in the NHANES classroom snapshot, how do the number of participants, mean BMI, and mean age differ across family income groups?
+
+This is a descriptive, unweighted summary. It does not explain *why* the groups differ and does not estimate national population values, because the survey weights, strata, and PSUs are not used.
+
+The CSV path is relative to the repository root, which is the Quarto project execution directory set by `execute-dir: project` in `_quarto.yml`.
+
+```{r}
+#| label: load-data
+#| message: false
+#| warning: false
+library(readr)
+library(dplyr)
+library(tibble)
+library(knitr)
+
+# AI prompt: "Load the NHANES equity CSV with a relative path; Marital is parsed as logical and gives warnings."
+# Verified: Marital and MaritalClean are text columns that are empty in the first rows, so readr guesses logical. Forcing col_character() removes the parse warnings, and nrow(nhanes) matches the 105626 rows in the file.
+nhanes <- read_csv(
+  "examples/nhanes-equity/data/nhanes_equity_v6.csv",
+  col_types = cols(
+    Marital = col_character(),
+    MaritalClean = col_character()
+  ),
+  show_col_types = FALSE
+)
+
+nrow(nhanes)
+```
+
+## Analysis cohort
+
+**Decision, stated before any results:**
+
+1. **Include** participants age 20-80 inclusive, using `Age >= 20` and `Age <= 80`. NHANES top-codes older ages at 80 or 85 depending on the cycle, so age 80 can include some people older than 80. Ages above 80 are excluded.
+2. **Check missingness** in the key variables within that cohort, *before* dropping any rows.
+3. **Exclude** cohort members missing `BMI` or `IncomeGroup`, the two variables Table 1 needs. Rows are not dropped for missing values in variables Table 1 does not use, such as `Marital` or `Waist`.
+
+```{r}
+#| label: cohort
+# AI prompt: "Filter to ages 20 to 80 inclusive and build a cohort flow table of step and n."
+# Verified: Checked the filter uses >= and <= instead of > and <, so age 20 and age 80 are kept. Each n was rechecked with sum() on the same conditions, and the counts add up from step to step.
+cohort <- nhanes |>
+  filter(Age >= 20, Age <= 80)
+
+analysis_df <- cohort |>
+  filter(!is.na(BMI), !is.na(IncomeGroup))
+
+cohort_flow <- tibble(
+  step = c(
+    "1. All rows in prepared CSV",
+    "2. Age 20-80 inclusive, the analysis cohort",
+    "3. Cohort with non-missing BMI and IncomeGroup, used for Table 1"
+  ),
+  n = c(nrow(nhanes), nrow(cohort), nrow(analysis_df))
+)
+
+kable(cohort_flow)
+```
+
+`r nrow(nhanes) - nrow(cohort)` rows were outside the age range, mostly children and teens. A further `r nrow(cohort) - nrow(analysis_df)` cohort members were excluded for missing BMI or income group.
+
+## Missingness check
+
+Missingness is counted within the age 20-80 cohort before rows are dropped, with a denominator of n = `r nrow(cohort)`.
+
+```{r}
+#| label: missingness
+# AI prompt: "Count missing values and percent missing for the key variables in the cohort."
+# Verified: The variable names match names(nhanes). The counts were compared with colSums(is.na(cohort)) and match, and the percent uses the cohort size as the denominator, not the full CSV.
+key_vars <- c("Cycle", "Age", "Gender", "Race", "BMI", "PIR", "IncomeGroup")
+
+missingness <- tibble(
+  variable = key_vars,
+  n_missing = vapply(cohort[key_vars], function(x) sum(is.na(x)), numeric(1)),
+  pct_missing = round(100 * n_missing / nrow(cohort), 1)
+)
+
+kable(missingness, col.names = c("Variable", "Missing n", "Missing %"))
+```
+
+`IncomeGroup` is built from `PIR`, the family poverty-income ratio, so the two have the same missing count. Income is the largest source of missing data. Missing income is unlikely to be random, since some people decline to report income, so the complete-case Table 1 may not represent everyone in the cohort.
+
+For comparison, dropping rows with *any* missing value, as `na.omit()` would, keeps far fewer people and removes whole cycles, because some columns that Table 1 never uses are missing for entire cycles:
+
+```{r}
+#| label: na-omit-check
+na_omit_df <- na.omit(cohort)
+
+tibble(
+  approach = c("Drop rows missing BMI or IncomeGroup", "na.omit() on all columns"),
+  n = c(nrow(analysis_df), nrow(na_omit_df)),
+  cycles_kept = c(n_distinct(analysis_df$Cycle), n_distinct(na_omit_df$Cycle))
+) |>
+  kable()
+```
+
+## Table 1
+
+Unweighted N, mean and SD of BMI, and mean and SD of age by income group, for adults age 20-80 with non-missing BMI and income group.
+
+```{r}
+#| label: table1
+# AI prompt: "Write a mean_sd() helper and a Table 1 by IncomeGroup with N, BMI mean and SD, and age mean and SD, ordered low to high income, then export it as table1.csv."
+# Verified: mean_sd() uses sd(), not var(). The low-income row was checked against plain mean() and sd() calls on that subset, and the N column sums to the Table 1 count in the cohort flow table. table1.csv was reread after rendering and matches the HTML table.
+mean_sd <- function(x) {
+  sprintf("%.1f (%.1f)", mean(x, na.rm = TRUE), sd(x, na.rm = TRUE))
+}
+
+income_levels <- c("Low Income (<1.3)", "Middle Income", "High Income (>3.5)")
+income_labels <- c("Low, PIR < 1.3", "Middle, PIR 1.3-3.5", "High, PIR > 3.5")
+
+table1 <- analysis_df |>
+  mutate(IncomeGroup = factor(IncomeGroup, levels = income_levels, labels = income_labels)) |>
+  group_by(IncomeGroup) |>
+  summarise(
+    N = n(),
+    `BMI, mean (SD)` = mean_sd(BMI),
+    `Age, mean (SD)` = mean_sd(Age),
+    .groups = "drop"
+  ) |>
+  rename(`Income group` = IncomeGroup)
+
+stopifnot(sum(table1$N) == nrow(analysis_df))
+
+kable(table1)
+
+write_csv(table1, "assignments/assignment06-eda-ai-audit/submission/table1.csv")
+```
+
+## Methods note
+
+We used the prepared NHANES Health Equity classroom CSV snapshot `nhanes_equity_v6`, derived from CDC/NCHS NHANES public-use files for cycles 1999-2000 to 2021-2023. The analysis cohort was participants age 20-80 inclusive, with n = `r nrow(cohort)`. Missingness was checked in the key variables before any summaries. Cohort members missing BMI or income group were excluded, leaving n = `r nrow(analysis_df)` for Table 1, and no values were imputed. Table 1 reports counts and means with standard deviations by family income group, using poverty-income ratio cut-points of 1.3 and 3.5.
+
+The summaries are **descriptive and unweighted**. Survey weights, strata, and PSUs were intentionally not used so that every number can be checked by hand, but a population-representative NHANES analysis would need them. No statistical tests were run. The table describes the prepared classroom dataset only. The differences between groups are not causal effects of income and are not estimates for the U.S. population.
+
+## Reproducing this file
+
+From the repository root:
+
+```bash
+quarto render assignments/assignment06-eda-ai-audit/submission/eda-note.qmd
+```
+
+Rendering re-creates `table1.csv` in this folder through `write_csv()`.
