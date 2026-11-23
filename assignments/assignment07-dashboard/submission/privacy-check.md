@@ -1,0 +1,3 @@
+# Privacy Check
+
+The data are the course's cached classroom snapshot `examples/nhanes-equity/data/nhanes_equity_v6.csv`, prepared from CDC/NCHS public-use NHANES files and used here only for descriptive classroom learning, with no live CDC download. The dashboard and `dashboard-preview.png` show only aggregate counts and mean BMI per cycle for one income group, with every cell over 1,000 people (smallest n = 1,089), so they include no row-level records or small cells, and all wording is descriptive and non-causal. No row-level records were uploaded to or shared with any external AI tool: the AI assistant worked locally in the Codespace and saw only aggregate summary tables and the rendered chart.

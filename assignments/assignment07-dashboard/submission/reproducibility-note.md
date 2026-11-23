@@ -1,0 +1,3 @@
+# Reproducibility Note
+
+The dashboard was rendered in the GitHub Codespace from the repository root with `quarto render assignments/assignment07-dashboard/submission/dashboard.qmd`, which writes `dashboard.html` in the same folder. It reads the data with the relative path `examples/nhanes-equity/data/nhanes_equity_v6.csv` and uses only `tidyverse` and `knitr` from the course devcontainer, with no credentials or local-only files. It rendered with no errors or warnings on 2026-11-23, as recorded in `testing-log.md`. To reproduce the test, change `selected_income` in the `dashboard-control` chunk and render again. `dashboard-preview.png` is the chart image embedded in the rendered HTML, exported because the Codespace has no browser for screenshots.
