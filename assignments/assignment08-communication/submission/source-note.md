@@ -1,0 +1,5 @@
+# Source Note
+
+- **Data:** the course's cached classroom snapshot `examples/nhanes-equity/data/nhanes_equity_v6.csv`, prepared from CDC/NCHS National Health and Nutrition Examination Survey (NHANES) public-use data. Citation: Centers for Disease Control and Prevention, National Center for Health Statistics. *National Health and Nutrition Examination Survey*. Public-use survey data and documentation. <https://wwwn.cdc.gov/nchs/nhanes/> (`@cdc-nhanes` in `references.bib`).
+- **Evidence traced to prior work:** the figure is `assignments/assignment07-dashboard/submission/dashboard-preview.png` from the Assignment 7 dashboard. The income-group table in the deck is computed in `slides.qmd` with the same cohort filter (age 20-80, non-missing BMI, cycle, and income group) and the same unweighted `mean()` as `dashboard.qmd`.
+- **How to read it:** results are descriptive and unweighted, not U.S. population estimates, and not causal. The source line and limitation are shown on the evidence and next-step slides, and the full citation is on the References slide.
